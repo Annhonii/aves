@@ -194,37 +194,48 @@ internal class TelegramBotClient(
     }
 
     private fun callOnce(method: String, fields: Map<String, String>, file: FilePart?): JsonElement {
+        // Plain calls (getMe, getChat, deleteMessage...) use the simple url-encoded form, which every Bot API
+        // server accepts; only uploads need multipart.
+        val contentType: String
+        val body: ByteArray
+        if (file == null) {
+            contentType = "application/x-www-form-urlencoded"
+            body = fields.entries.joinToString("&") { (k, v) ->
+                java.net.URLEncoder.encode(k, "UTF-8") + "=" + java.net.URLEncoder.encode(v, "UTF-8")
+            }.toByteArray(Charsets.UTF_8)
+            return post("$baseUrl/bot$token/$method", contentType, body, null)
+        }
         val boundary = "----refra" + UUID.randomUUID().toString().replace("-", "")
         val head = ByteArrayOutputStream()
         fun text(s: String) = head.write(s.toByteArray(Charsets.UTF_8))
         for ((name, value) in fields) {
             text("--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n")
         }
-        val fileHeader = file?.let {
-            "--$boundary\r\nContent-Disposition: form-data; name=\"${it.field}\"; filename=\"${it.fileName}\"\r\n" +
+        text(
+            "--$boundary\r\nContent-Disposition: form-data; name=\"${file.field}\"; filename=\"${file.fileName}\"\r\n" +
                 "Content-Type: application/octet-stream\r\n\r\n"
-        }
-        fileHeader?.let(::text)
-        val tail = (if (file != null) "\r\n" else "") + "--$boundary--\r\n"
-        val headBytes = head.toByteArray()
-        val tailBytes = tail.toByteArray(Charsets.UTF_8)
-        val total = headBytes.size.toLong() + (file?.bytes?.size?.toLong() ?: 0L) + tailBytes.size
+        )
+        val tailBytes = "\r\n--$boundary--\r\n".toByteArray(Charsets.UTF_8)
+        return post("$baseUrl/bot$token/$method", "multipart/form-data; boundary=$boundary", head.toByteArray(), file.bytes, tailBytes)
+    }
 
-        val conn = open("$baseUrl/bot$token/$method")
+    private fun post(url: String, contentType: String, head: ByteArray, payload: ByteArray?, tail: ByteArray = ByteArray(0)): JsonElement {
+        val total = head.size.toLong() + (payload?.size?.toLong() ?: 0L) + tail.size
+        val conn = open(url)
         try {
             conn.requestMethod = "POST"
             conn.doOutput = true
-            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+            conn.setRequestProperty("Content-Type", contentType)
             conn.setFixedLengthStreamingMode(total)
             conn.outputStream.use { out ->
-                out.write(headBytes)
-                if (file != null) out.write(file.bytes)
-                out.write(tailBytes)
+                out.write(head)
+                if (payload != null) out.write(payload)
+                out.write(tail)
             }
             val code = conn.responseCode
             val stream = if (code in 200..299) conn.inputStream else conn.errorStream
-            val body = stream?.use { it.readBytes() }?.toString(Charsets.UTF_8).orEmpty()
-            return parseEnvelope(code, body)
+            val responseBody = stream?.use { it.readBytes() }?.toString(Charsets.UTF_8).orEmpty()
+            return parseEnvelope(code, responseBody)
         } finally {
             conn.disconnect()
         }
