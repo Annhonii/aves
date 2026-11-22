@@ -68,7 +68,7 @@ class TelegramCloudHandler(private val context: Context) : MethodCallHandler {
 
     private fun readableError(e: Exception): String = when (e) {
         is TelegramApiException -> when (e.errorCode) {
-            401 -> "Invalid bot token"
+            401, 404 -> "Invalid bot token. Paste the full token from @BotFather (like 123456789:AAH…), with no spaces. (Telegram: ${e.description})"
             400, 403 -> "Telegram refused the request: ${e.description}. Add the bot as an administrator of the channel and check the channel id."
             else -> "Telegram error ${e.errorCode}: ${e.description}"
         }
@@ -147,7 +147,7 @@ class TelegramCloudHandler(private val context: Context) : MethodCallHandler {
 
     private fun connect(call: MethodCall, result: MethodChannel.Result) {
         val chatId = normalizeChat(call.argument<String>("chatId").orEmpty())
-        val token = call.argument<String>("token").orEmpty().trim()
+        val token = call.argument<String>("token").orEmpty().filterNot { it.isWhitespace() || it == '"' || it == '\'' }.removePrefix("bot")
         val passphrase = call.argument<String>("passphrase").orEmpty()
         try {
             val opened = openVault(chatId, token, passphrase)
