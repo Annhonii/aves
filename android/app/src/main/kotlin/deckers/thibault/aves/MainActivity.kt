@@ -46,6 +46,7 @@ import deckers.thibault.aves.channel.calls.MetadataFetchHandler
 import deckers.thibault.aves.channel.calls.SecurityHandler
 import deckers.thibault.aves.channel.calls.StorageHandler
 import deckers.thibault.aves.channel.calls.StoragePermissionHandler
+import deckers.thibault.aves.channel.calls.TelegramCloudHandler
 import deckers.thibault.aves.channel.calls.WallpaperHandler
 import deckers.thibault.aves.channel.calls.window.ActivityWindowHandler
 import deckers.thibault.aves.channel.calls.window.WindowHandler
@@ -175,6 +176,7 @@ open class MainActivity : FlutterFragmentActivity() {
         MethodChannel(messenger, SecurityHandler.CHANNEL).setMethodCallHandler(SecurityHandler(this))
         MethodChannel(messenger, StorageHandler.CHANNEL).setMethodCallHandler(StorageHandler(this))
         MethodChannel(messenger, StoragePermissionHandler.CHANNEL).setMethodCallHandler(StoragePermissionHandler(this))
+        MethodChannel(messenger, TelegramCloudHandler.CHANNEL).setMethodCallHandler(TelegramCloudHandler(this))
         MethodChannel(messenger, WallpaperHandler.CHANNEL).setMethodCallHandler(WallpaperHandler(this))
         // - need Activity
         MethodChannel(messenger, AppProfileHandler.CHANNEL).setMethodCallHandler(AppProfileHandler(this))

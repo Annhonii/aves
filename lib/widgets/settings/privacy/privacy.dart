@@ -17,6 +17,7 @@ import 'package:aves/widgets/settings/common/tiles/switch_list.dart';
 import 'package:aves/widgets/settings/privacy/access_grants_page.dart';
 import 'package:aves/widgets/settings/privacy/hidden_items_page.dart';
 import 'package:aves/widgets/settings/privacy/permissions/permissions_tile.dart';
+import 'package:aves/widgets/settings/privacy/telegram_cloud_page.dart';
 import 'package:aves/widgets/settings/settings_definition.dart';
 import 'package:aves_model/aves_model.dart';
 import 'package:material_ui/material_ui.dart';
@@ -40,6 +41,7 @@ class PrivacySection extends SettingsSection {
     return [
       SettingsTilePermissions(),
       SettingsTilePrivacyHiddenItems(),
+      SettingsTilePrivacyTelegramCloud(),
       if (!settings.useTvLayout) SettingsTilePrivacyStorageAccess(),
       if (!settings.useTvLayout) SettingsTilePrivacyEnableBin(),
       SettingsTilePrivacySaveSearchHistory(),
@@ -178,5 +180,21 @@ class SettingsTilePrivacyStorageAccess extends SettingsTile {
     title: title,
     routeName: StorageAccessPage.routeName,
     builder: (context) => const StorageAccessPage(),
+  );
+}
+
+class SettingsTilePrivacyTelegramCloud extends SettingsTile {
+  @override
+  List<String> get settingKeys => []; // no editable settings
+
+  @override
+  String title(BuildContext context) => 'Telegram cloud';
+
+  @override
+  Widget build(BuildContext context) => SettingsSubPageTile(
+    title: title,
+    subtitle: (context) => const Text('Encrypted backup to a private Telegram channel'),
+    routeName: TelegramCloudPage.routeName,
+    builder: (context) => const TelegramCloudPage(),
   );
 }

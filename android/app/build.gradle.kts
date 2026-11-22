@@ -215,6 +215,7 @@ dependencies {
     coreLibraryDesugaring(libs.android.desugarJdkLibs)
 
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.appcompat)

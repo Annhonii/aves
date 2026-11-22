@@ -1,0 +1,39 @@
+name: Feature build
+
+# Secret-free analysis + profile APK build for feature branches (no signing keys needed).
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "feature/**" ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: feature-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/checkout@v4
+      - name: Get Flutter packages
+        run: ./flutterw pub get
+      - name: Generate app localizations
+        run: ./flutterw gen-l10n
+      - name: Static analysis (errors and warnings fail, lints are reported)
+        run: ./flutterw analyze --no-fatal-infos
+      - name: Build profile APK
+        run: |
+          scripts/gen_flavor_play.sh
+          scripts/apply_flavor_play.sh
+          ./flutterw build apk --profile -t lib/main_play.dart --flavor play
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aves-telegram-profile-apk
+          path: build/app/outputs/flutter-apk/*.apk
